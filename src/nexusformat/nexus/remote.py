@@ -16,8 +16,8 @@ import h5pyd as h5
 
 from nexusformat.nexus import *
 
-NX_SERVER = 'http://hdfgroup.org:5000'
-NX_DOMAIN = 'exfac.org'
+NX_SERVER = 'http://34.233.121.234:5101'
+NX_DOMAIN = '/home/jreadey/'
 
 __all__ = ['NXRemoteFile', 'nxloadremote', 
            'nxgetserver', 'nxsetserver', 'NX_SERVER', 
@@ -59,7 +59,7 @@ class NXRemoteFile(NXFile):
         Creates an h5py File object for reading and writing.
         """
         self.h5 = h5
-        self.name = name
+        self._name = name
         self._mode = 'r'
         if server is None:
             server = NX_SERVER
@@ -67,8 +67,8 @@ class NXRemoteFile(NXFile):
         if domain is None:
             domain = NX_DOMAIN
         self._domain = domain
-        self._file = self.h5.File(self.domain, mode, endpoint=server)
-        self._filename = self.domain                             
+        self._filename = os.path.join(self._domain, self._name)                             
+        self._file = self.h5.File(self._filename, mode, endpoint=server)
         self._path = '/'
 
     def __repr__(self):
@@ -77,7 +77,7 @@ class NXRemoteFile(NXFile):
 
     def open(self, **kwds):
         if not self.isopen():
-            self._file = self.h5.File(self._filename,self._mode, 
+            self._file = self.h5.File(self._filename, self._mode, 
                                       endpoint=self._server)
             self.nxpath = '/'
         return self
@@ -92,12 +92,12 @@ class NXRemoteFile(NXFile):
         else:
             return False
 
-    @property
-    def domain(self):
-        domain = self.name.split('.')[0].split('/')
-        domain.reverse()
-        domain.append(self._domain)
-        return '.'.join(domain)
+#    @property
+#    def domain(self):
+#        domain = self.name.split('.')[0].split('/')
+#        domain.reverse()
+#        domain.append(self._domain)
+#        return '.'.join(domain)
 
     @property
     def file(self):
@@ -112,12 +112,14 @@ class NXRemoteFile(NXFile):
 
         Large datasets are not read until they are needed.
         """
+        _mode = self._mode
+        self._mode = 'r'
         self.nxpath = '/'
         root = self._readgroup('root', self._file['/'])
         root._group = None
         root._file = self
         root._filename = self._filename
-        root._mode = self._mode
+        root._mode = self._mode = _mode
         return root
 
     def _readchildren(self, group):
@@ -138,16 +140,18 @@ class NXRemoteFile(NXFile):
         if group is None:
             return NXgroup(name=name)
         attrs = self._readattrs()
-        nxclass = self._readnxclass(attrs)
-        if nxclass is not None:
-            del attrs['NX_class']
-        elif self.nxpath == '/':
+        nxclass = self._readclass(attrs.pop('NX_class', 'NXgroup'))
+        if self.nxpath == '/':
             nxclass = 'NXroot'
-        else:
-            nxclass = 'NXgroup'
         children = self._readchildren(group)
-        group = NXgroup(nxclass=nxclass, name=name, attrs=attrs, 
-                        entries=children)
+        _target, _filename, _abspath = self._readlink()
+        if self.nxpath != '/' and _target is not None:
+            group = NXlinkgroup(nxclass=nxclass, name=name, attrs=attrs,
+                                new_entries=children, target=_target, 
+                                file=_filename, abspath=_abspath)
+        else:
+            group = NXgroup(nxclass=nxclass, name=name, attrs=attrs, 
+                            new_entries=children)
         for obj in children.values():
             obj._group = group
         group._changed = True
@@ -159,11 +163,21 @@ class NXRemoteFile(NXFile):
         """
         if field is None:
             return NXfield(name=name)
-        value, shape, dtype, attrs = self.readvalues(field)
-        if 'target' in attrs and self.nxpath != 'target':
-            return NXlinkfield(value=value, name=name, dtype=dtype, shape=shape, 
-                               target=self.attrs['target'], attrs=attrs)
+        _target, _filename, _abspath = self._readlink()
+        if _target is not None:
+            if _filename is not None:
+                try:
+                    value, shape, dtype, attrs = self.readvalues()
+                    return NXlinkfield(
+                        target=_target, file=_filename, abspath=_abspath,
+                        name=name, value=value, dtype=dtype, shape=shape, 
+                        attrs=attrs)
+                except Exception:
+                    pass
+            return NXlinkfield(name=name, target=_target, file=_filename, 
+                               abspath=_abspath)
         else:
+            value, shape, dtype, attrs = self.readvalues(field)
             return NXfield(value=value, name=name, dtype=dtype, shape=shape, 
                            attrs=attrs)
  
