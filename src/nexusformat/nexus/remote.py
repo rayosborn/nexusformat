@@ -149,6 +149,9 @@ class NXRemoteFile(NXFile):
             group = NXlinkgroup(nxclass=nxclass, name=name, attrs=attrs,
                                 new_entries=children, target=_target, 
                                 file=_filename, abspath=_abspath)
+            if _filename:
+                group._file = NXRemoteFile(_filename, self._mode, 
+                                           endpoint=self._server)
         else:
             group = NXgroup(nxclass=nxclass, name=name, attrs=attrs, 
                             new_entries=children)
@@ -168,18 +171,22 @@ class NXRemoteFile(NXFile):
             if _filename is not None:
                 try:
                     value, shape, dtype, attrs = self.readvalues()
-                    return NXlinkfield(
-                        target=_target, file=_filename, abspath=_abspath,
-                        name=name, value=value, dtype=dtype, shape=shape, 
-                        attrs=attrs)
+                    data = NXlinkfield(
+                               target=_target, file=_filename, abspath=_abspath,
+                               name=name, value=value, dtype=dtype, shape=shape, 
+                               attrs=attrs)
                 except Exception:
-                    pass
-            return NXlinkfield(name=name, target=_target, file=_filename, 
-                               abspath=_abspath)
+                    data = NXlinkfield(name=name, target=_target, 
+                                       file=_filename, abspath=_abspath)
+                data._file = NXRemoteFile(_filename, self._mode, 
+                                          endpoint=self._server)
+            else:
+                data = NXlinkfield(name=name, target=_target)
         else:
             value, shape, dtype, attrs = self.readvalues(field)
-            return NXfield(value=value, name=name, dtype=dtype, shape=shape, 
+            data = NXfield(value=value, name=name, dtype=dtype, shape=shape, 
                            attrs=attrs)
+        return data
  
     def _readattrs(self):
         return dict(self[self.nxpath].attrs.items())
