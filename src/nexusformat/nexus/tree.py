@@ -1530,8 +1530,10 @@ class NXobject(object):
     def nxfile(self):
         if self._file:
             return self._file
-        elif self.nxfilename:
+        elif self._filename:
             return NXFile(self.nxfilename, self.nxfilemode)
+        elif self._group:
+            return self._group.nxfile
         else:
             return None
 
@@ -1592,10 +1594,12 @@ class NXobject(object):
                 self.nxfilename != self.nxroot.nxfilename)
     
     def exists(self):
-        if self.nxfilename is not None:
-            return os.path.exists(self.nxfilename)
-        else:
+        try:
+            with self.nxfile as f:
+                pass
             return True
+        except OSError as exception:
+            return False
 
 
 class NXfield(NXobject):
