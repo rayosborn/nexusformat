@@ -691,6 +691,11 @@ class NXFile(object):
         else:
             return self._readdata(self.nxname)
 
+    def readentries(self, group):
+        children = self._readchildren()
+        for obj in children.values():
+            obj._group = group
+
     def readvalues(self, attrs=None):
         field = self.get(self.nxpath)
         if field is None:
