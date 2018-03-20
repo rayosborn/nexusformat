@@ -1599,12 +1599,15 @@ class NXobject(object):
                 self.nxfilename != self.nxroot.nxfilename)
     
     def exists(self):
-        try:
-            with self.nxfile as f:
-                pass
+        if self.nxfilename is not None:
+            try:
+                with self.nxfile as f:
+                    pass
+                return True
+            except OSError as exception:
+                return False
+        else:
             return True
-        except OSError as exception:
-            return False
 
 
 class NXfield(NXobject):
