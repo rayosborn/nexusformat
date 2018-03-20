@@ -115,7 +115,7 @@ class NXRemoteFile(NXFile):
         _mode = self._mode
         self._mode = 'r'
         self.nxpath = '/'
-        root = self._readgroup('root', self._file['/'])
+        root = self._readgroup('root', self._file['/'], recursive=True)
         root._group = None
         root._file = self
         root._filename = self._filename
@@ -133,7 +133,7 @@ class NXRemoteFile(NXFile):
             self.nxpath = self.nxparent
         return children
 
-    def _readgroup(self, name, group):
+    def _readgroup(self, name, group, recursive=True):
         """
         Reads the group with the current path and returns it as an NXgroup.
         """
@@ -143,7 +143,10 @@ class NXRemoteFile(NXFile):
         nxclass = self._readclass(attrs.pop('NX_class', 'NXgroup'))
         if self.nxpath == '/':
             nxclass = 'NXroot'
-        children = self._readchildren(group)
+        if recursive:
+            children = self._readchildren(group)
+        else:
+            children = {}
         _target, _filename, _abspath = self._readlink()
         if self.nxpath != '/' and _target is not None:
             group = NXlinkgroup(nxclass=nxclass, name=name, attrs=attrs,
@@ -190,6 +193,14 @@ class NXRemoteFile(NXFile):
  
     def _readattrs(self):
         return dict(self[self.nxpath].attrs.items())
+
+    def readentries(self, group):
+        children = self._readchildren(self[group.nxpath])
+        for key,value in children.items():
+            value._group = group
+            value._name = key
+            group._entries[key] = value
+            group.set_changed() 
 
     def readvalues(self, field):
         shape, dtype = field.shape, field.dtype
