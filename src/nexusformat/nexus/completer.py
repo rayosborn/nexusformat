@@ -22,9 +22,9 @@ Examples
 --------
 Autocompletion works on each component of the following commands::
 
->>> signal = root[entry/data/signal]
->>> units = root[entry/data/signal].units
->>> data = NXdata(root[entry/data/signal])
+>>> signal = root['entry/data/signal']
+>>> units = root['entry/data/signal'].units
+>>> data = NXdata(root['entry/data/signal'])
 
 """
 from __future__ import absolute_import
