@@ -1,5 +1,6 @@
 import os
 import pytest
+import time
 from nexusformat.nexus import *
 
 field1 = NXfield('a', name="f1")
@@ -50,6 +51,8 @@ def test_locked_assignments(tmpdir):
     original_id = id(root.nxfile)
     originalmtime = root.mtime
 
+    time.sleep(1)
+
     root["entry/f1"] = "b"
 
     assert root["entry/f1"] == "b"
@@ -76,6 +79,8 @@ def test_lock_interactions(tmpdir):
 
     root1 = nxload(filename, mode="rw")
     root2 = nxload(filename, mode="r")
+
+    time.sleep(1)
 
     root1.nxfile.lock = 10
     root1["entry/f1"] = "b"
