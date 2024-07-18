@@ -3662,6 +3662,7 @@ class NXfield(NXobject):
 
         def plot_axis(axis):
             return NXfield(axis.nxvalue, name=axis.nxname, attrs=axis.attrs)
+
         if self.nxgroup:
             if 'axes' in self.attrs:
                 axis_names = _readaxes(self.attrs['axes'])
@@ -3674,6 +3675,10 @@ class NXfield(NXobject):
             axes = []
             for i, axis_name in enumerate(axis_names):
                 axis_name = axis_name.strip()
+                axis_indices = f'{axis_name}_indices'
+                if axis_indices in self.attrs:
+                    if len(self.attrs[axis_indices]) > 1:
+                        axes.append(empty_axis(i))
                 if (axis_name not in self.nxgroup or
                         invalid_axis(self.nxgroup[axis_name])):
                     axes.append(empty_axis(i))
