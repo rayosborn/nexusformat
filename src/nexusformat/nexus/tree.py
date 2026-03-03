@@ -217,6 +217,7 @@ from pathlib import Path
 from pathlib import PurePosixPath as PurePath
 
 import h5py as h5
+from matplotlib.rcsetup import validate_color_or_auto
 import numpy as np
 
 from .. import __version__ as nxversion
@@ -4033,7 +4034,8 @@ class NXfield(NXobject):
 
     @property
     def mask(self):
-        """NXfield's mask as an array.
+        """
+        NXfield's mask as an array.
 
         Only works if the NXfield is in a group and has the 'mask'
         attribute set or if the NXfield array is defined as a masked
@@ -4073,6 +4075,25 @@ class NXfield(NXobject):
                 self._value.mask = value
             else:
                 self._value = np.ma.array(self._value, mask=value)
+
+    @property
+    def nxinterpretation(self):
+        """
+        Interpretation attribute
+
+        This attribute provides guidance on how to plot the field.
+        """
+        if 'interpretation' in self.attrs:
+            return self.attrs['interpretation']
+        else:
+            return None
+
+    @nxinterpretation.setter
+    def nxinterpretation(self, value):
+        if is_text(value):
+            self.attrs['interpretation'] = value
+        else:
+            raise NeXusError('Invalid value for the interpretation attribute')
 
     def valid_attributes(self, group=None, definitions=None, deprecated=False):
         """
