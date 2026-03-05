@@ -150,7 +150,6 @@ class PyplotPlotter:
         origin = kwargs.pop("origin", "lower")
         aspect = kwargs.pop("aspect", "auto")
         regular = kwargs.pop("regular", False)
-        cmap = kwargs.pop("cmap", "viridis")
         colorbar = kwargs.pop("colorbar", True)
         interpolation = kwargs.pop("interpolation", "nearest")
         bad = kwargs.pop("bad", "darkgray")
@@ -164,6 +163,14 @@ class PyplotPlotter:
         errors = data_group.nxerrors
         title = data_group.nxtitle
         coordinates = data_group.nxcoordinates
+
+        if signal.nxinterpretation == "divergent":
+            cmap = kwargs.pop("cmap", "seismic")
+        elif signal.nxinterpretation == "categorical":
+            cmap = kwargs.pop("cmap", "tab20")
+        else:
+            cmap = kwargs.pop("cmap", "viridis")
+
 
         # Provide a new view of the data if there is a dimension of length 1
         if len(coordinates) > 0:
