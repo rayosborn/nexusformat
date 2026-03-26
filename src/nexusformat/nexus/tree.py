@@ -3464,10 +3464,7 @@ class NXfield(NXobject):
         if self.ndim != 1:
             raise NeXusError(
                 "NXfield must be one-dimensional to use the index function")
-        if self.nxdata[-1] < self.nxdata[0]:
-            flipped = True
-        else:
-            flipped = False
+        flipped = self.nxdata[-1] < self.nxdata[0]
         if max:
             if flipped:
                 idx = np.max(len(self.nxdata) -
